@@ -7,13 +7,12 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
@@ -71,10 +70,10 @@ extern "C" {
 #define APS6408_MR0_ADDRESS            0x00000000U
 
 #define APS6408_MR0_DRIVE_STRENGTH     0x03U       /*!< Drive Strength                      */
-#define APS6408_MR0_DS_FULL            0x00U       /*!< Drive Strength : Full (25 ?)        */
-#define APS6408_MR0_DS_HALF            0x01U       /*!< Drive Strength : Half (50 ?)        */
-#define APS6408_MR0_DS_QUART           0x02U       /*!< Drive Strength : 1/4 (100 ?)        */
-#define APS6408_MR0_DS_EIGHT           0x03U       /*!< Drive Strength : 1/8 (200 ?)        */
+#define APS6408_MR0_DS_FULL            0x00U       /*!< Drive Strength : Full (25 Ohm)      */
+#define APS6408_MR0_DS_HALF            0x01U       /*!< Drive Strength : Half (50 Ohm)      */
+#define APS6408_MR0_DS_QUART           0x02U       /*!< Drive Strength : 1/4 (100 Ohm)      */
+#define APS6408_MR0_DS_EIGHT           0x03U       /*!< Drive Strength : 1/8 (200 Ohm)      */
 
 #define APS6408_MR0_READ_LATENCY_CODE  0x1CU       /*!< Read Latency Code                   */
 #define APS6408_MR0_RLC_3              0x00U       /*!< Read Latency Code : 3               */
@@ -172,9 +171,9 @@ extern "C" {
   ****************************************************************************/
 
 /* Read Operations */
-#define APS6408_READ_CMD               0x00        /*!< Synchronous Read                    */
-#define APS6408_READ_LINEAR_BURST_CMD  0x20        /*!< Linear Burst Read                   */
-#define APS6408_READ_HYBRID_BURST_CMD  0x3F        /*!< Hybrid Burst Read                   */
+#define APS6408_READ_CMD               0x00U        /*!< Synchronous Read                    */
+#define APS6408_READ_LINEAR_BURST_CMD  0x20U        /*!< Linear Burst Read                   */
+#define APS6408_READ_HYBRID_BURST_CMD  0x3FU        /*!< Hybrid Burst Read                   */
 
 /* Write Operations */
 #define APS6408_WRITE_CMD              0x80U       /*!< Synchronous Write                   */
@@ -291,4 +290,3 @@ int32_t APS6408_Reset(OSPI_HandleTypeDef *Ctx);
   * @}
   */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
