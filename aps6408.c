@@ -37,47 +37,48 @@
 
 /* Read/Write Array Commands *********************/
 /**
-  * @brief  Reads an amount of data from the OSPI memory.
+  * @brief  Reads an amount of data from the memory.
   * @param  Ctx Component object pointer
   * @param  pData Pointer to data to be read
   * @param  ReadAddr Read start address
   * @param  Size Size of data to read
   * @param  LatencyCode Latency used for the access
   * @param  BurstType Type of burst used for the access
-  * @retval OSPI memory status
+  * @retval Memory status
   */
-int32_t APS6408_Read(OSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t ReadAddr, uint32_t Size, uint32_t LatencyCode,
+int32_t APS6408_Read(XSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t ReadAddr, uint32_t Size, uint32_t LatencyCode,
                      uint32_t BurstType)
 {
-  OSPI_RegularCmdTypeDef sCommand = {0};
+  XSPI_RegularCmdTypeDef sCommand = {0};
 
   /* Initialize the read command */
-  sCommand.OperationType      = HAL_OSPI_OPTYPE_COMMON_CFG;
-  sCommand.FlashId            = HAL_OSPI_FLASH_ID_1;
-  sCommand.InstructionMode    = HAL_OSPI_INSTRUCTION_8_LINES;
-  sCommand.InstructionSize    = HAL_OSPI_INSTRUCTION_8_BITS;
-  sCommand.InstructionDtrMode = HAL_OSPI_INSTRUCTION_DTR_DISABLE;
+  sCommand.OperationType      = HAL_XSPI_OPTYPE_COMMON_CFG;
+  sCommand.InstructionMode    = HAL_XSPI_INSTRUCTION_8_LINES;
+  sCommand.InstructionWidth   = HAL_XSPI_INSTRUCTION_8_BITS;
+  sCommand.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
   sCommand.Instruction        = (BurstType == 0U) ? APS6408_READ_LINEAR_BURST_CMD : APS6408_READ_CMD;
-  sCommand.AddressMode        = HAL_OSPI_ADDRESS_8_LINES;
-  sCommand.AddressSize        = HAL_OSPI_ADDRESS_32_BITS;
-  sCommand.AddressDtrMode     = HAL_OSPI_ADDRESS_DTR_ENABLE;
+  sCommand.AddressMode        = HAL_XSPI_ADDRESS_8_LINES;
+  sCommand.AddressWidth       = HAL_XSPI_ADDRESS_32_BITS;
+  sCommand.AddressDTRMode     = HAL_XSPI_ADDRESS_DTR_ENABLE;
   sCommand.Address            = ReadAddr;
-  sCommand.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE;
-  sCommand.DataMode           = HAL_OSPI_DATA_8_LINES;
-  sCommand.DataDtrMode        = HAL_OSPI_DATA_DTR_ENABLE;
-  sCommand.NbData             = Size;
-  sCommand.DummyCycles        = LatencyCode;
-  sCommand.DQSMode            = HAL_OSPI_DQS_ENABLE;
-  sCommand.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD;
-
+  sCommand.AlternateBytesMode = HAL_XSPI_ALT_BYTES_NONE;
+  sCommand.DataMode           = HAL_XSPI_DATA_8_LINES;
+  sCommand.DataDTRMode        = HAL_XSPI_DATA_DTR_ENABLE;
+  sCommand.DataLength         = Size;
+  /* On AP6408 memory, Latency code includes the last 2 bytes address (+1 Dummy Cycle) */
+  sCommand.DummyCycles        = (LatencyCode - 1U);
+  sCommand.DQSMode            = HAL_XSPI_DQS_ENABLE;
+ #if defined (XSPI_CCR_SIOO)
+  sCommand.SIOOMode           = HAL_XSPI_SIOO_INST_EVERY_CMD;
+ #endif
   /* Configure the command */
-  if (HAL_OSPI_Command(Ctx, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_XSPI_Command(Ctx, &sCommand, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
     return APS6408_ERROR;
   }
 
   /* Reception of the data */
-  if (HAL_OSPI_Receive(Ctx, pData, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_XSPI_Receive(Ctx, pData, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
     return APS6408_ERROR;
   }
@@ -93,40 +94,42 @@ int32_t APS6408_Read(OSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t ReadAddr,
   * @param  Size Size of data to read
   * @param  LatencyCode Latency used for the access
   * @param  BurstType Type of burst used for the access
-  * @retval OSPI memory status
+  * @retval Memory status
   */
-int32_t APS6408_Read_DMA(OSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t ReadAddr, uint32_t Size,
+int32_t APS6408_Read_DMA(XSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t ReadAddr, uint32_t Size,
                          uint32_t LatencyCode, uint32_t BurstType)
 {
-  OSPI_RegularCmdTypeDef sCommand;
+  XSPI_RegularCmdTypeDef sCommand = {0};
 
   /* Initialize the read command */
-  sCommand.OperationType      = HAL_OSPI_OPTYPE_COMMON_CFG;
-  sCommand.FlashId            = HAL_OSPI_FLASH_ID_1;
-  sCommand.InstructionMode    = HAL_OSPI_INSTRUCTION_8_LINES;
-  sCommand.InstructionSize    = HAL_OSPI_INSTRUCTION_8_BITS;
-  sCommand.InstructionDtrMode = HAL_OSPI_INSTRUCTION_DTR_DISABLE;
+  sCommand.OperationType      = HAL_XSPI_OPTYPE_COMMON_CFG;
+  sCommand.InstructionMode    = HAL_XSPI_INSTRUCTION_8_LINES;
+  sCommand.InstructionWidth   = HAL_XSPI_INSTRUCTION_8_BITS;
+  sCommand.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
   sCommand.Instruction        = ((BurstType == 0U) ? APS6408_READ_LINEAR_BURST_CMD : APS6408_READ_CMD);
-  sCommand.AddressMode        = HAL_OSPI_ADDRESS_8_LINES;
-  sCommand.AddressSize        = HAL_OSPI_ADDRESS_32_BITS;
-  sCommand.AddressDtrMode     = HAL_OSPI_ADDRESS_DTR_ENABLE;
+  sCommand.AddressMode        = HAL_XSPI_ADDRESS_8_LINES;
+  sCommand.AddressWidth       = HAL_XSPI_ADDRESS_32_BITS;
+  sCommand.AddressDTRMode     = HAL_XSPI_ADDRESS_DTR_ENABLE;
   sCommand.Address            = ReadAddr;
-  sCommand.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE;
-  sCommand.DataMode           = HAL_OSPI_DATA_8_LINES;
-  sCommand.DataDtrMode        = HAL_OSPI_DATA_DTR_ENABLE;
-  sCommand.NbData             = Size;
-  sCommand.DummyCycles        = LatencyCode;
-  sCommand.DQSMode            = HAL_OSPI_DQS_ENABLE;
-  sCommand.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD;
+  sCommand.AlternateBytesMode = HAL_XSPI_ALT_BYTES_NONE;
+  sCommand.DataMode           = HAL_XSPI_DATA_8_LINES;
+  sCommand.DataDTRMode        = HAL_XSPI_DATA_DTR_ENABLE;
+  sCommand.DataLength         = Size;
+  /* On AP6408 memory, Latency code includes the last 2 bytes address (+1 Dummy Cycle) */
+  sCommand.DummyCycles        = (LatencyCode - 1U);
+  sCommand.DQSMode            = HAL_XSPI_DQS_ENABLE;
+ #if defined (XSPI_CCR_SIOO)
+  sCommand.SIOOMode           = HAL_XSPI_SIOO_INST_EVERY_CMD;
+ #endif
 
   /* Configure the command */
-  if (HAL_OSPI_Command(Ctx, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_XSPI_Command(Ctx, &sCommand, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
     return APS6408_ERROR;
   }
 
   /* Reception of the data */
-  if (HAL_OSPI_Receive_DMA(Ctx, pData) != HAL_OK)
+  if (HAL_XSPI_Receive_DMA(Ctx, pData) != HAL_OK)
   {
     return APS6408_ERROR;
   }
@@ -142,40 +145,42 @@ int32_t APS6408_Read_DMA(OSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t ReadA
   * @param  Size Size of data to write
   * @param  LatencyCode Latency used for the access
   * @param  BurstType Type of burst used for the access
-  * @retval OSPI memory status
+  * @retval Memory status
   */
-int32_t APS6408_Write(OSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t WriteAddr, uint32_t Size, uint32_t LatencyCode,
+int32_t APS6408_Write(XSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t WriteAddr, uint32_t Size, uint32_t LatencyCode,
                       uint32_t BurstType)
 {
-  OSPI_RegularCmdTypeDef sCommand = {0};
+  XSPI_RegularCmdTypeDef sCommand = {0};
 
   /* Initialize the write command */
-  sCommand.OperationType      = HAL_OSPI_OPTYPE_COMMON_CFG;
-  sCommand.FlashId            = HAL_OSPI_FLASH_ID_1;
+  sCommand.OperationType      = HAL_XSPI_OPTYPE_COMMON_CFG;
   sCommand.Instruction        = (BurstType == 0U) ? APS6408_WRITE_LINEAR_BURST_CMD : APS6408_WRITE_CMD;
-  sCommand.InstructionMode    = HAL_OSPI_INSTRUCTION_8_LINES;
-  sCommand.InstructionSize    = HAL_OSPI_INSTRUCTION_8_BITS;
-  sCommand.InstructionDtrMode = HAL_OSPI_INSTRUCTION_DTR_DISABLE;
+  sCommand.InstructionMode    = HAL_XSPI_INSTRUCTION_8_LINES;
+  sCommand.InstructionWidth   = HAL_XSPI_INSTRUCTION_8_BITS;
+  sCommand.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
   sCommand.Address            = WriteAddr;
-  sCommand.AddressMode        = HAL_OSPI_ADDRESS_8_LINES;
-  sCommand.AddressSize        = HAL_OSPI_ADDRESS_32_BITS;
-  sCommand.AddressDtrMode     = HAL_OSPI_ADDRESS_DTR_ENABLE;
-  sCommand.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE;
-  sCommand.DataMode           = HAL_OSPI_DATA_8_LINES;
-  sCommand.NbData             = Size;
-  sCommand.DataDtrMode        = HAL_OSPI_DATA_DTR_ENABLE;
-  sCommand.DummyCycles        = LatencyCode;
-  sCommand.DQSMode            = HAL_OSPI_DQS_ENABLE;
-  sCommand.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD;
+  sCommand.AddressMode        = HAL_XSPI_ADDRESS_8_LINES;
+  sCommand.AddressWidth       = HAL_XSPI_ADDRESS_32_BITS;
+  sCommand.AddressDTRMode     = HAL_XSPI_ADDRESS_DTR_ENABLE;
+  sCommand.AlternateBytesMode = HAL_XSPI_ALT_BYTES_NONE;
+  sCommand.DataMode           = HAL_XSPI_DATA_8_LINES;
+  sCommand.DataLength         = Size;
+  sCommand.DataDTRMode        = HAL_XSPI_DATA_DTR_ENABLE;
+  /* On AP6408 memory, Latency code includes the last 2 bytes address (+1 Dummy Cycle) */
+  sCommand.DummyCycles        = (LatencyCode - 1U);
+  sCommand.DQSMode            = HAL_XSPI_DQS_ENABLE;
+ #if defined (XSPI_CCR_SIOO)
+  sCommand.SIOOMode           = HAL_XSPI_SIOO_INST_EVERY_CMD;
+ #endif
 
   /* Configure the command */
-  if (HAL_OSPI_Command(Ctx, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_XSPI_Command(Ctx, &sCommand, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
     return APS6408_ERROR;
   }
 
   /* Transmission of the data */
-  if (HAL_OSPI_Transmit(Ctx, pData, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_XSPI_Transmit(Ctx, pData, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
     return APS6408_ERROR;
   }
@@ -184,47 +189,49 @@ int32_t APS6408_Write(OSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t WriteAdd
 }
 
 /**
-  * @brief  Writes an amount of data in DMA mode to the OSPI memory.
+  * @brief  Writes an amount of data in DMA mode to the memory.
   * @param  Ctx Component object pointer
   * @param  pData Pointer to data to be written
   * @param  WriteAddr Write start address
   * @param  Size Size of data to write
   * @param  LatencyCode Latency used for the access
   * @param  BurstType Type of burst used for the access
-  * @retval OSPI memory status
+  * @retval Memory status
   */
-int32_t APS6408_Write_DMA(OSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t WriteAddr, uint32_t Size,
+int32_t APS6408_Write_DMA(XSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t WriteAddr, uint32_t Size,
                           uint32_t LatencyCode, uint32_t BurstType)
 {
-  OSPI_RegularCmdTypeDef sCommand;
+  XSPI_RegularCmdTypeDef sCommand = {0};
 
   /* Initialize the write command */
-  sCommand.OperationType      = HAL_OSPI_OPTYPE_COMMON_CFG;
-  sCommand.FlashId            = HAL_OSPI_FLASH_ID_1;
-  sCommand.InstructionMode    = HAL_OSPI_INSTRUCTION_8_LINES;
-  sCommand.InstructionSize    = HAL_OSPI_INSTRUCTION_8_BITS;
-  sCommand.InstructionDtrMode = HAL_OSPI_INSTRUCTION_DTR_DISABLE;
+  sCommand.OperationType      = HAL_XSPI_OPTYPE_COMMON_CFG;
+  sCommand.InstructionMode    = HAL_XSPI_INSTRUCTION_8_LINES;
+  sCommand.InstructionWidth   = HAL_XSPI_INSTRUCTION_8_BITS;
+  sCommand.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
   sCommand.Instruction        = ((BurstType == 0U) ? APS6408_WRITE_LINEAR_BURST_CMD : APS6408_WRITE_CMD);
-  sCommand.AddressMode        = HAL_OSPI_ADDRESS_8_LINES;
-  sCommand.AddressSize        = HAL_OSPI_ADDRESS_32_BITS;
-  sCommand.AddressDtrMode     = HAL_OSPI_ADDRESS_DTR_ENABLE;
+  sCommand.AddressMode        = HAL_XSPI_ADDRESS_8_LINES;
+  sCommand.AddressWidth       = HAL_XSPI_ADDRESS_32_BITS;
+  sCommand.AddressDTRMode     = HAL_XSPI_ADDRESS_DTR_ENABLE;
   sCommand.Address            = WriteAddr;
-  sCommand.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE;
-  sCommand.DataMode           = HAL_OSPI_DATA_8_LINES;
-  sCommand.DataDtrMode        = HAL_OSPI_DATA_DTR_ENABLE;
-  sCommand.NbData             = Size;
+  sCommand.AlternateBytesMode = HAL_XSPI_ALT_BYTES_NONE;
+  sCommand.DataMode           = HAL_XSPI_DATA_8_LINES;
+  sCommand.DataDTRMode        = HAL_XSPI_DATA_DTR_ENABLE;
+  sCommand.DataLength         = Size;
+  /* On AP6408 memory, Latency code includes the last 2 bytes address (+1 Dummy Cycle) */
   sCommand.DummyCycles        = (LatencyCode - 1U);
-  sCommand.DQSMode            = HAL_OSPI_DQS_ENABLE;
-  sCommand.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD;
+  sCommand.DQSMode            = HAL_XSPI_DQS_ENABLE;
+ #if defined (XSPI_CCR_SIOO)
+  sCommand.SIOOMode           = HAL_XSPI_SIOO_INST_EVERY_CMD;
+ #endif
 
   /* Configure the command */
-  if (HAL_OSPI_Command(Ctx, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_XSPI_Command(Ctx, &sCommand, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
     return APS6408_ERROR;
   }
 
   /* Transmission of the data */
-  if (HAL_OSPI_Transmit_DMA(Ctx, pData) != HAL_OK)
+  if (HAL_XSPI_Transmit_DMA(Ctx, pData) != HAL_OK)
   {
     return APS6408_ERROR;
   }
@@ -233,53 +240,59 @@ int32_t APS6408_Write_DMA(OSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t Writ
 }
 
 /**
-  * @brief  Enable memory mapped mode for the OSPI memory.
+  * @brief  Enable memory mapped mode for the memory.
   * @param  Ctx Component object pointer
-  * @retval OSPI memory status
+  * @param  ReadLatencyCode Latency used for the read access
+  * @param  WriteLatencyCode Latency used for the write access
+  * @param  IOMode I/O Mode used for the access
+  * @param  BurstType Type of burst used for the access
+  * @retval Memory status
   */
-int32_t APS6408_EnableMemoryMappedMode(OSPI_HandleTypeDef *Ctx, uint32_t ReadLatencyCode, uint32_t WriteLatencyCode,
+int32_t APS6408_EnableMemoryMappedMode(XSPI_HandleTypeDef *Ctx, uint32_t ReadLatencyCode, uint32_t WriteLatencyCode,
                                        uint32_t BurstType)
 {
-  OSPI_RegularCmdTypeDef   sCommand;
-  OSPI_MemoryMappedTypeDef sMemMappedCfg;
+  XSPI_RegularCmdTypeDef   sCommand = {0};
+  XSPI_MemoryMappedTypeDef sMemMappedCfg = {0};
 
   /* Initialize the write command */
-  sCommand.OperationType      = HAL_OSPI_OPTYPE_WRITE_CFG;
-  sCommand.FlashId            = HAL_OSPI_FLASH_ID_1;
-  sCommand.InstructionMode    = HAL_OSPI_INSTRUCTION_8_LINES;
-  sCommand.InstructionSize    = HAL_OSPI_INSTRUCTION_8_BITS;
-  sCommand.InstructionDtrMode = HAL_OSPI_INSTRUCTION_DTR_DISABLE;
+  sCommand.OperationType      = HAL_XSPI_OPTYPE_WRITE_CFG;
+  sCommand.InstructionMode    = HAL_XSPI_INSTRUCTION_8_LINES;
+  sCommand.InstructionWidth   = HAL_XSPI_INSTRUCTION_8_BITS;
+  sCommand.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
   sCommand.Instruction        = (BurstType == 0U) ? APS6408_WRITE_LINEAR_BURST_CMD : APS6408_WRITE_CMD;
-  sCommand.AddressMode        = HAL_OSPI_ADDRESS_8_LINES;
-  sCommand.AddressSize        = HAL_OSPI_ADDRESS_32_BITS;
-  sCommand.AddressDtrMode     = HAL_OSPI_ADDRESS_DTR_ENABLE;
-  sCommand.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE;
-  sCommand.DataMode           = HAL_OSPI_DATA_8_LINES;
-  sCommand.DataDtrMode        = HAL_OSPI_DATA_DTR_ENABLE;
-  sCommand.DummyCycles        = WriteLatencyCode;
-  sCommand.DQSMode            = HAL_OSPI_DQS_ENABLE;
-  sCommand.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD;
+  sCommand.AddressMode        = HAL_XSPI_ADDRESS_8_LINES;
+  sCommand.AddressWidth       = HAL_XSPI_ADDRESS_32_BITS;
+  sCommand.AddressDTRMode     = HAL_XSPI_ADDRESS_DTR_ENABLE;
+  sCommand.AlternateBytesMode = HAL_XSPI_ALT_BYTES_NONE;
+  sCommand.DataMode           = HAL_XSPI_DATA_8_LINES;
+  sCommand.DataDTRMode        = HAL_XSPI_DATA_DTR_ENABLE;
+  /* On AP6408 memory, Latency code includes the last 2 bytes address (+1 Dummy Cycle) */
+  sCommand.DummyCycles        = (WriteLatencyCode - 1U);
+  sCommand.DQSMode            = HAL_XSPI_DQS_ENABLE;
+ #if defined (XSPI_CCR_SIOO)
+  sCommand.SIOOMode           = HAL_XSPI_SIOO_INST_EVERY_CMD;
+ #endif
 
-  if (HAL_OSPI_Command(Ctx, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_XSPI_Command(Ctx, &sCommand, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
     return APS6408_ERROR;
   }
 
   /* Initialize the read command */
-  sCommand.OperationType = HAL_OSPI_OPTYPE_READ_CFG;
-  sCommand.Instruction   = APS6408_READ_CMD;
-  sCommand.DummyCycles   = ReadLatencyCode;
+  sCommand.OperationType = HAL_XSPI_OPTYPE_READ_CFG;
+  sCommand.Instruction   = (BurstType == 0U) ? APS6408_READ_LINEAR_BURST_CMD : APS6408_READ_CMD;
+  /* On AP6408 memory, Latency code includes the last 2 bytes address (+1 Dummy Cycle) */
+  sCommand.DummyCycles   = (ReadLatencyCode - 1U);
 
-  if (HAL_OSPI_Command(Ctx, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_XSPI_Command(Ctx, &sCommand, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
     return APS6408_ERROR;
   }
 
-  /* OctoSPI activation of memory-mapped mode */
-  sMemMappedCfg.TimeOutActivation = HAL_OSPI_TIMEOUT_COUNTER_ENABLE;
-  sMemMappedCfg.TimeOutPeriod     = 0x34U;
+  /* Activation of memory-mapped mode */
+  sMemMappedCfg.TimeOutActivation = HAL_XSPI_TIMEOUT_COUNTER_DISABLE;
 
-  if (HAL_OSPI_MemoryMapped(Ctx, &sMemMappedCfg) != HAL_OK)
+  if (HAL_XSPI_MemoryMapped(Ctx, &sMemMappedCfg) != HAL_OK)
   {
     return APS6408_ERROR;
   }
@@ -296,36 +309,39 @@ int32_t APS6408_EnableMemoryMappedMode(OSPI_HandleTypeDef *Ctx, uint32_t ReadLat
   * @param  LatencyCode Latency used for the access
   * @retval error status
   */
-int32_t APS6408_ReadReg(OSPI_HandleTypeDef *Ctx, uint32_t Address, uint8_t *Value, uint32_t LatencyCode)
+int32_t APS6408_ReadReg(XSPI_HandleTypeDef *Ctx, uint32_t Address, uint8_t *Value, uint32_t LatencyCode)
 {
-  OSPI_RegularCmdTypeDef sCommand = {0};
+  XSPI_RegularCmdTypeDef sCommand = {0};
 
   /* Initialize the read register command */
-  sCommand.OperationType      = HAL_OSPI_OPTYPE_COMMON_CFG;
-  sCommand.InstructionMode    = HAL_OSPI_INSTRUCTION_8_LINES;
-  sCommand.InstructionSize    = HAL_OSPI_INSTRUCTION_8_BITS;
-  sCommand.InstructionDtrMode = HAL_OSPI_INSTRUCTION_DTR_DISABLE;
+  sCommand.OperationType      = HAL_XSPI_OPTYPE_COMMON_CFG;
+  sCommand.InstructionMode    = HAL_XSPI_INSTRUCTION_8_LINES;
+  sCommand.InstructionWidth   = HAL_XSPI_INSTRUCTION_8_BITS;
+  sCommand.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
   sCommand.Instruction        = APS6408_READ_REG_CMD;
-  sCommand.AddressMode        = HAL_OSPI_ADDRESS_8_LINES;
-  sCommand.AddressSize        = HAL_OSPI_ADDRESS_32_BITS;
-  sCommand.AddressDtrMode     = HAL_OSPI_ADDRESS_DTR_ENABLE;
+  sCommand.AddressMode        = HAL_XSPI_ADDRESS_8_LINES;
+  sCommand.AddressWidth       = HAL_XSPI_ADDRESS_32_BITS;
+  sCommand.AddressDTRMode     = HAL_XSPI_ADDRESS_DTR_ENABLE;
   sCommand.Address            = Address;
-  sCommand.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE;
-  sCommand.DataMode           = HAL_OSPI_DATA_8_LINES;
-  sCommand.DataDtrMode        = HAL_OSPI_DATA_DTR_ENABLE;
-  sCommand.NbData             = 2;
-  sCommand.DummyCycles        = LatencyCode;
-  sCommand.DQSMode            = HAL_OSPI_DQS_ENABLE;
-  sCommand.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD;
+  sCommand.AlternateBytesMode = HAL_XSPI_ALT_BYTES_NONE;
+  sCommand.DataMode           = HAL_XSPI_DATA_8_LINES;
+  sCommand.DataDTRMode        = HAL_XSPI_DATA_DTR_ENABLE;
+  sCommand.DataLength         = 2;
+  /* On AP6408 memory, Latency code includes the last 2 bytes address (+1 Dummy Cycle) */
+  sCommand.DummyCycles        = (LatencyCode - 1U);
+  sCommand.DQSMode            = HAL_XSPI_DQS_ENABLE;
+  #if defined (XSPI_CCR_SIOO)
+  sCommand.SIOOMode           = HAL_XSPI_SIOO_INST_EVERY_CMD;
+ #endif
 
   /* Configure the command */
-  if (HAL_OSPI_Command(Ctx, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_XSPI_Command(Ctx, &sCommand, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
     return APS6408_ERROR;
   }
 
   /* Reception of the data */
-  if (HAL_OSPI_Receive(Ctx, (uint8_t *)Value, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_XSPI_Receive(Ctx, (uint8_t *)Value, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
     return APS6408_ERROR;
   }
@@ -340,36 +356,38 @@ int32_t APS6408_ReadReg(OSPI_HandleTypeDef *Ctx, uint32_t Address, uint8_t *Valu
   * @param  Value Value to write to register
   * @retval error status
   */
-int32_t APS6408_WriteReg(OSPI_HandleTypeDef *Ctx, uint32_t Address, uint8_t Value)
+int32_t APS6408_WriteReg(XSPI_HandleTypeDef *Ctx, uint32_t Address, uint8_t Value)
 {
-  OSPI_RegularCmdTypeDef sCommand = {0};
+  XSPI_RegularCmdTypeDef sCommand = {0};
 
   /* Initialize the write register command */
-  sCommand.OperationType      = HAL_OSPI_OPTYPE_COMMON_CFG;
-  sCommand.InstructionMode    = HAL_OSPI_INSTRUCTION_8_LINES;
-  sCommand.InstructionSize    = HAL_OSPI_INSTRUCTION_8_BITS;
-  sCommand.InstructionDtrMode = HAL_OSPI_INSTRUCTION_DTR_DISABLE;
+  sCommand.OperationType      = HAL_XSPI_OPTYPE_COMMON_CFG;
+  sCommand.InstructionMode    = HAL_XSPI_INSTRUCTION_8_LINES;
+  sCommand.InstructionWidth   = HAL_XSPI_INSTRUCTION_8_BITS;
+  sCommand.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
   sCommand.Instruction        = APS6408_WRITE_REG_CMD;
-  sCommand.AddressMode        = HAL_OSPI_ADDRESS_8_LINES;
-  sCommand.AddressSize        = HAL_OSPI_ADDRESS_32_BITS;
-  sCommand.AddressDtrMode     = HAL_OSPI_ADDRESS_DTR_ENABLE;
+  sCommand.AddressMode        = HAL_XSPI_ADDRESS_8_LINES;
+  sCommand.AddressWidth       = HAL_XSPI_ADDRESS_32_BITS;
+  sCommand.AddressDTRMode     = HAL_XSPI_ADDRESS_DTR_ENABLE;
   sCommand.Address            = Address;
-  sCommand.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE;
-  sCommand.DataMode           = HAL_OSPI_DATA_8_LINES;
-  sCommand.DataDtrMode        = HAL_OSPI_DATA_DTR_ENABLE;
-  sCommand.NbData             = 2;
+  sCommand.AlternateBytesMode = HAL_XSPI_ALT_BYTES_NONE;
+  sCommand.DataMode           = HAL_XSPI_DATA_8_LINES;
+  sCommand.DataDTRMode        = HAL_XSPI_DATA_DTR_ENABLE;
+  sCommand.DataLength         = 2;
   sCommand.DummyCycles        = 0;
-  sCommand.DQSMode            = HAL_OSPI_DQS_DISABLE;
-  sCommand.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD;
+  sCommand.DQSMode            = HAL_XSPI_DQS_DISABLE;
+ #if defined (XSPI_CCR_SIOO)
+  sCommand.SIOOMode           = HAL_XSPI_SIOO_INST_EVERY_CMD;
+ #endif
 
   /* Configure the command */
-  if (HAL_OSPI_Command(Ctx, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_XSPI_Command(Ctx, &sCommand, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
     return APS6408_ERROR;
   }
 
   /* Transmission of the data */
-  if (HAL_OSPI_Transmit(Ctx, (uint8_t *)(&Value), HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_XSPI_Transmit(Ctx, (uint8_t *)(&Value), HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
     return APS6408_ERROR;
   }
@@ -386,7 +404,7 @@ int32_t APS6408_WriteReg(OSPI_HandleTypeDef *Ctx, uint32_t Address, uint8_t Valu
   * @param  LatencyCode Latency used for the access
   * @retval error status
   */
-int32_t APS6408_ReadID(OSPI_HandleTypeDef *Ctx, uint8_t *ID, uint32_t LatencyCode)
+int32_t APS6408_ReadID(XSPI_HandleTypeDef *Ctx, uint8_t *ID, uint32_t LatencyCode)
 {
   /* Read the Mode Register 1 and 2 */
   if (APS6408_ReadReg(Ctx, APS6408_MR1_ADDRESS, ID, LatencyCode) != APS6408_OK)
@@ -409,7 +427,7 @@ int32_t APS6408_ReadID(OSPI_HandleTypeDef *Ctx, uint8_t *ID, uint32_t LatencyCod
   * @param  Ctx Component object pointer
   * @retval error status
   */
-int32_t APS6408_EnterPowerDown(OSPI_HandleTypeDef *Ctx)
+int32_t APS6408_EnterPowerDown(XSPI_HandleTypeDef *Ctx)
 {
   /* Update the deep power down value of the MR6 register */
   if (APS6408_WriteReg(Ctx, APS6408_MR6_ADDRESS, APS6408_MR6_HS_DEEP_POWER_DOWN) != APS6408_OK)
@@ -428,33 +446,34 @@ int32_t APS6408_EnterPowerDown(OSPI_HandleTypeDef *Ctx)
   * @param  Ctx Component object pointer
   * @retval error status
   */
-int32_t APS6408_LeavePowerDown(OSPI_HandleTypeDef *Ctx)
+int32_t APS6408_LeavePowerDown(XSPI_HandleTypeDef *Ctx)
 {
   /* --- A dummy command is sent to the memory, as the nCS should be low for at least 60 ns  --- */
   /* ---                  Memory takes 150us max to leave deep power down                    --- */
 
-  OSPI_RegularCmdTypeDef sCommand = {0};
+  XSPI_RegularCmdTypeDef sCommand = {0};
 
   /* Initialize the command */
-  sCommand.OperationType      = HAL_OSPI_OPTYPE_COMMON_CFG;
-  sCommand.FlashId            = HAL_OSPI_FLASH_ID_1;
-  sCommand.InstructionMode    = HAL_OSPI_INSTRUCTION_8_LINES;
-  sCommand.InstructionSize    = HAL_OSPI_INSTRUCTION_8_BITS;
-  sCommand.InstructionDtrMode = HAL_OSPI_INSTRUCTION_DTR_DISABLE;
+  sCommand.OperationType      = HAL_XSPI_OPTYPE_COMMON_CFG;
+  sCommand.InstructionMode    = HAL_XSPI_INSTRUCTION_8_LINES;
+  sCommand.InstructionWidth   = HAL_XSPI_INSTRUCTION_8_BITS;
+  sCommand.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
   sCommand.Instruction        = APS6408_READ_CMD;
-  sCommand.AddressMode        = HAL_OSPI_ADDRESS_8_LINES;
-  sCommand.AddressSize        = HAL_OSPI_ADDRESS_32_BITS;
-  sCommand.AddressDtrMode     = HAL_OSPI_ADDRESS_DTR_DISABLE;
+  sCommand.AddressMode        = HAL_XSPI_ADDRESS_8_LINES;
+  sCommand.AddressWidth       = HAL_XSPI_ADDRESS_32_BITS;
+  sCommand.AddressDTRMode     = HAL_XSPI_ADDRESS_DTR_DISABLE;
   sCommand.Address            = 0;
-  sCommand.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE;
-  sCommand.DataMode           = HAL_OSPI_DATA_NONE;
-  sCommand.NbData             = 0;
+  sCommand.AlternateBytesMode = HAL_XSPI_ALT_BYTES_NONE;
+  sCommand.DataMode           = HAL_XSPI_DATA_NONE;
+  sCommand.DataLength         = 0;
   sCommand.DummyCycles        = 0;
-  sCommand.DQSMode            = HAL_OSPI_DQS_DISABLE;
-  sCommand.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD;
+  sCommand.DQSMode            = HAL_XSPI_DQS_DISABLE;
+ #if defined (XSPI_CCR_SIOO)
+  sCommand.SIOOMode           = HAL_XSPI_SIOO_INST_EVERY_CMD;
+ #endif
 
   /* Configure the command */
-  if (HAL_OSPI_Command(Ctx, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_XSPI_Command(Ctx, &sCommand, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
     return APS6408_ERROR;
   }
@@ -468,30 +487,31 @@ int32_t APS6408_LeavePowerDown(OSPI_HandleTypeDef *Ctx)
   * @param  Ctx Component object pointer
   * @retval error status
   */
-int32_t APS6408_Reset(OSPI_HandleTypeDef *Ctx)
+int32_t APS6408_Reset(XSPI_HandleTypeDef *Ctx)
 {
-  OSPI_RegularCmdTypeDef sCommand = {0};
+  XSPI_RegularCmdTypeDef sCommand = {0};
 
   /* Initialize the command */
-  sCommand.OperationType      = HAL_OSPI_OPTYPE_COMMON_CFG;
-  sCommand.FlashId            = HAL_OSPI_FLASH_ID_1;
-  sCommand.InstructionMode    = HAL_OSPI_INSTRUCTION_8_LINES;
-  sCommand.InstructionSize    = HAL_OSPI_INSTRUCTION_8_BITS;
-  sCommand.InstructionDtrMode = HAL_OSPI_INSTRUCTION_DTR_DISABLE;
+  sCommand.OperationType      = HAL_XSPI_OPTYPE_COMMON_CFG;
+  sCommand.InstructionMode    = HAL_XSPI_INSTRUCTION_8_LINES;
+  sCommand.InstructionWidth   = HAL_XSPI_INSTRUCTION_8_BITS;
+  sCommand.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
   sCommand.Instruction        = APS6408_RESET_CMD;
-  sCommand.AddressMode        = HAL_OSPI_ADDRESS_8_LINES;
-  sCommand.AddressSize        = HAL_OSPI_ADDRESS_24_BITS;
-  sCommand.AddressDtrMode     = HAL_OSPI_ADDRESS_DTR_DISABLE;
+  sCommand.AddressMode        = HAL_XSPI_ADDRESS_8_LINES;
+  sCommand.AddressWidth       = HAL_XSPI_ADDRESS_24_BITS;
+  sCommand.AddressDTRMode     = HAL_XSPI_ADDRESS_DTR_DISABLE;
   sCommand.Address            = 0;
-  sCommand.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE;
-  sCommand.DataMode           = HAL_OSPI_DATA_NONE;
-  sCommand.NbData             = 0;
+  sCommand.AlternateBytesMode = HAL_XSPI_ALT_BYTES_NONE;
+  sCommand.DataMode           = HAL_XSPI_DATA_NONE;
+  sCommand.DataLength         = 0;
   sCommand.DummyCycles        = 0;
-  sCommand.DQSMode            = HAL_OSPI_DQS_DISABLE;
-  sCommand.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD;
+  sCommand.DQSMode            = HAL_XSPI_DQS_DISABLE;
+ #if defined (XSPI_CCR_SIOO)
+  sCommand.SIOOMode           = HAL_XSPI_SIOO_INST_EVERY_CMD;
+ #endif
 
   /* Configure the command */
-  if (HAL_OSPI_Command(Ctx, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  if (HAL_XSPI_Command(Ctx, &sCommand, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
   {
     return APS6408_ERROR;
   }

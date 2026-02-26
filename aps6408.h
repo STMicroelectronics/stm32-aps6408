@@ -158,13 +158,11 @@ extern "C" {
 #define APS6408_MR8_BL_16_BYTES        0x00U       /*!< Burst Length : 16 Byte/Word Wrap    */
 #define APS6408_MR8_BL_32_BYTES        0x01U       /*!< Burst Length : 32 Byte/Word Wrap    */
 #define APS6408_MR8_BL_64_BYTES        0x02U       /*!< Burst Length : 64 Byte/Word Wrap    */
-#define APS6408_MR8_BL_2K_BYTES        0x03U       /*!< Burst Length : 2K Byte/1K Word Wrap */
+#define APS6408_MR8_BL_1K_BYTES        0x03U       /*!< Burst Length : 1K Byte/Word Wrap    */
 
 #define APS6408_MR8_BT                 0x04U       /*!< Burst Type                          */
 
 #define APS6408_MR8_RBX                0x08U       /*!< Row Boundary Crossing Read Enable   */
-
-#define APS6408_MR8_X8_X16             0x40U       /*!< IO X8/X16 Mode                      */
 
 /******************************************************************************
   * @brief  APS6408 Commands
@@ -197,7 +195,7 @@ typedef enum
   APS6408_BURST_16_BYTES = APS6408_MR8_BL_16_BYTES,
   APS6408_BURST_32_BYTES = APS6408_MR8_BL_32_BYTES,
   APS6408_BURST_64_BYTES = APS6408_MR8_BL_64_BYTES,
-  APS6408_BURST_2_KBYTES = APS6408_MR8_BL_2K_BYTES
+  APS6408_BURST_1_KBYTES = APS6408_MR8_BL_1K_BYTES
 } APS6408_BurstLength_t;
 
 typedef enum
@@ -243,30 +241,30 @@ typedef enum
   * @{
   */
 /* Read/Write Array Commands **************************************************/
-int32_t APS6408_Read(OSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t ReadAddr, uint32_t Size, uint32_t LatencyCode,
+int32_t APS6408_Read(XSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t ReadAddr, uint32_t Size, uint32_t LatencyCode,
                      uint32_t BurstType);
-int32_t APS6408_Read_DMA(OSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t ReadAddr, uint32_t Size,
+int32_t APS6408_Read_DMA(XSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t ReadAddr, uint32_t Size,
                          uint32_t LatencyCode, uint32_t BurstType);
-int32_t APS6408_Write(OSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t WriteAddr, uint32_t Size, uint32_t LatencyCode,
+int32_t APS6408_Write(XSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t WriteAddr, uint32_t Size, uint32_t LatencyCode,
                       uint32_t BurstType);
-int32_t APS6408_Write_DMA(OSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t WriteAddr, uint32_t Size,
+int32_t APS6408_Write_DMA(XSPI_HandleTypeDef *Ctx, uint8_t *pData, uint32_t WriteAddr, uint32_t Size,
                           uint32_t LatencyCode, uint32_t BurstType);
-int32_t APS6408_EnableMemoryMappedMode(OSPI_HandleTypeDef *Ctx, uint32_t ReadLatencyCode, uint32_t WriteLatencyCode,
+int32_t APS6408_EnableMemoryMappedMode(XSPI_HandleTypeDef *Ctx, uint32_t ReadLatencyCode, uint32_t WriteLatencyCode,
                                        uint32_t BurstType);
 
 /* Register/Setting Commands **************************************************/
-int32_t APS6408_ReadReg(OSPI_HandleTypeDef *Ctx, uint32_t Address, uint8_t *Value, uint32_t LatencyCode);
-int32_t APS6408_WriteReg(OSPI_HandleTypeDef *Ctx, uint32_t Address, uint8_t Value);
+int32_t APS6408_ReadReg(XSPI_HandleTypeDef *Ctx, uint32_t Address, uint8_t *Value, uint32_t LatencyCode);
+int32_t APS6408_WriteReg(XSPI_HandleTypeDef *Ctx, uint32_t Address, uint8_t Value);
 
 /* ID Commands ****************************************************************/
-int32_t APS6408_ReadID(OSPI_HandleTypeDef *Ctx, uint8_t *ID, uint32_t LatencyCode);
+int32_t APS6408_ReadID(XSPI_HandleTypeDef *Ctx, uint8_t *ID, uint32_t LatencyCode);
 
 /* Power down Commands ********************************************************/
-int32_t APS6408_EnterPowerDown(OSPI_HandleTypeDef *Ctx);
-int32_t APS6408_LeavePowerDown(OSPI_HandleTypeDef *Ctx);
+int32_t APS6408_EnterPowerDown(XSPI_HandleTypeDef *Ctx);
+int32_t APS6408_LeavePowerDown(XSPI_HandleTypeDef *Ctx);
 
 /* Reset Command **************************************************************/
-int32_t APS6408_Reset(OSPI_HandleTypeDef *Ctx);
+int32_t APS6408_Reset(XSPI_HandleTypeDef *Ctx);
 
 /**
   * @}

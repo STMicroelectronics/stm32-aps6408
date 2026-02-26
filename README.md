@@ -1,5 +1,7 @@
 # BSP APS6408 Component
 
+![tag](https://img.shields.io/badge/tag-v2.0.1-brightgreen.svg)
+
 ## Overview
 
 **STM32Cube** is an STMicroelectronics original initiative to ease the developers life by reducing efforts, time and cost.

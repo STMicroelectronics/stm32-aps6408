@@ -33,8 +33,8 @@ extern "C" {
   * @{
   */
 /* Default dummy clocks cycles */
-#define DUMMY_CLOCK_CYCLES_READ         5U
-#define DUMMY_CLOCK_CYCLES_WRITE        4U
+#define DEFAULT_READ_LATENCY_CODE  APS6408_READ_LATENCY_5
+#define DEFAULT_WRITE_LATENCY_CODE APS6408_WRITE_LATENCY_5
 /**
   * @}
   */
